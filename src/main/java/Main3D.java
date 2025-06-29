@@ -1,9 +1,13 @@
 
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Random;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -30,13 +34,11 @@ import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
 import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
 import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
 import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
-import static org.lwjgl.glfw.GLFW.glfwGetWindowSize;
 import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
 import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
 import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
@@ -62,8 +64,6 @@ import static org.lwjgl.opengl.GL20.glUniform1i;
 import static org.lwjgl.opengl.GL20.glUniform3fv;
 import static org.lwjgl.opengl.GL20.glUniform4fv;
 import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
-import org.lwjgl.system.MemoryStack;
-import static org.lwjgl.system.MemoryStack.stackPush;
 import org.lwjgl.system.MemoryUtil;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import org.lwjgl.util.vector.Matrix4f;
@@ -168,7 +168,7 @@ public class Main3D {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
 
         // Criação da janela
-		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         window = glfwCreateWindow(vidmode.width(), vidmode.height(), "Tela cheia", glfwGetPrimaryMonitor(), NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
@@ -245,12 +245,19 @@ public class Main3D {
 
         });
 
-        // Centraliza a janela na tela
-        try (MemoryStack stack = stackPush()) {
-            IntBuffer pWidth = stack.mallocInt(1);
-            IntBuffer pHeight = stack.mallocInt(1);
-            glfwGetWindowSize(window, pWidth, pHeight);
-            glfwSetWindowPos(window, (vidmode.width() - pWidth.get(0)) / 2, (vidmode.height() - pHeight.get(0)) / 2);
+        try {
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(getClass().getResource("freeze.wav"));
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+
+            // Ajuste de volume
+            FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+            float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
+            volumeControl.setValue(volume);
+            
+            clip.start();
+        } catch (Exception e) {
+            System.err.println("error load music");
         }
 
         // Configura contexto OpenGL	
@@ -270,7 +277,7 @@ public class Main3D {
 
         // Carrega texturas e modelos
         BufferedImage imggato = TextureLoader.loadImage("textures/texturaGato.jpeg");
-        BufferedImage imgf104 = TextureLoader.loadImage("textures/texturaf104.jpg");
+        BufferedImage imgf104 = TextureLoader.loadImage("textures/skz.jpeg"); // textura jato
         BufferedImage imgsr71 = TextureLoader.loadImage("textures/sr71.jpg");
 
         BufferedImage gatorgba = new BufferedImage(imggato.getWidth(), imggato.getHeight(), BufferedImage.TYPE_INT_ARGB);
