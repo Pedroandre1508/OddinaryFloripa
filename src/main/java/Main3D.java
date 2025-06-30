@@ -49,6 +49,7 @@ import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
@@ -57,6 +58,9 @@ import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glEnable;
 import static org.lwjgl.opengl.GL11.glFrustum;
+import static org.lwjgl.opengl.GL11.glLoadIdentity;
+import static org.lwjgl.opengl.GL11.glMatrixMode;
+import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL20.glGetUniformLocation;
@@ -73,6 +77,7 @@ import org.lwjgl.util.vector.Vector4f;
 import Model.VboBilboard;
 import Model.VboCube;
 import dados.Constantes;
+import obj.HealthBar;
 import obj.Mapa3D;
 import obj.ObjHTGsrtm;
 import obj.ObjModel;
@@ -90,6 +95,8 @@ public class Main3D {
     float viewAngX = 0;
     float viewAngY = 0;
     float scale = 1.0f;
+    private int windowWidth;
+    private int windowHeight;
 
     public Random rnd = new Random();
 
@@ -116,6 +123,8 @@ public class Main3D {
 
     // Objeto do jogador
     ObjtCene player;
+    HealthBar healthBar; // Barra de vida do jogador
+    boolean GameOver = false; // Indica se o jogo está pausado devido à morte do jogador
 
     // Variáveis para controle de lógica
     double angluz = 0;
@@ -156,6 +165,8 @@ public class Main3D {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
+        // Inicializa a barra de vida com 5 vidas
+        healthBar = new HealthBar();
 
         // Initialize GLFW. Most GLFW functions will not work before doing this.
         if (!glfwInit()) {
@@ -169,14 +180,20 @@ public class Main3D {
 
         // Criação da janela
         GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        window = glfwCreateWindow(vidmode.width(), vidmode.height(), "Tela cheia", glfwGetPrimaryMonitor(), NULL);
+        windowWidth = vidmode.width(); // Armazena a largura da janela
+        windowHeight = vidmode.height(); // Armazena a altura da janela
+        window = glfwCreateWindow(windowWidth, windowHeight, "Tela cheia", glfwGetPrimaryMonitor(), NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
 
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+            if (GameOver) {
+
+                if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
+                    glfwSetWindowShouldClose(window, true);
+                }
+                return; // Bloqueia todas as outras ações
             }
             if (action == GLFW_PRESS) {
                 if (key == GLFW_KEY_W) {
@@ -254,7 +271,7 @@ public class Main3D {
             FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
             float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
             volumeControl.setValue(volume);
-            
+
             clip.start();
         } catch (Exception e) {
             System.err.println("error load music");
@@ -290,21 +307,15 @@ public class Main3D {
 
         BufferedImage imgmulttexture = TextureLoader.loadImage("textures/multtexture.png");
         Constantes.tmult = TextureLoader.loadTexture(imgmulttexture);
-        System.out.println("tmult " + Constantes.tmult);
 
         BufferedImage texturamig = TextureLoader.loadImage("textures/TexturaMig01.png");
         Constantes.txtmig = TextureLoader.loadTexture(texturamig);
-        System.out.println("tmult " + Constantes.tmult);
 
         BufferedImage imgtexttiro = TextureLoader.loadImage("textures/texturaTiro.png");
         Constantes.texturaTiro = TextureLoader.loadTexture(imgtexttiro);
-        System.out.println("texturaTiro " + Constantes.texturaTiro);
 
         BufferedImage imgtextexp = TextureLoader.loadImage("textures/texturaExplosao.png");
         Constantes.texturaExplosao = TextureLoader.loadTexture(imgtextexp);
-        System.out.println("texturaExplosao " + Constantes.texturaExplosao);
-
-        System.out.println("tgato " + tgato);
 
         vboc = new VboCube();
         vboc.load();
@@ -316,7 +327,6 @@ public class Main3D {
         ObjModel f101 = new ObjModel();
         f101.loadObj("models/f104starfighter.obj");
         f101.load();
-        System.out.println("Faces: " + f101.f.size());
 
         player = new ObjtCene(0, 0, 0, 0.1f);
         player.model = f101;
@@ -333,7 +343,6 @@ public class Main3D {
 
         sr71 = new ObjModel();
         sr71.load();
-        System.out.println("Faces: " + sr71.f.size());
 
         for (int i = 0; i < 1000; i++) {
             ObjtCene cubo = new ObjtCene(rnd.nextFloat() * 10 - 5, rnd.nextFloat() * 10 - 5, rnd.nextFloat() * 10 - 5, rnd.nextFloat() * 0.05f + 0.02f);
@@ -370,7 +379,6 @@ public class Main3D {
             frame++;
             long actualTime = System.currentTimeMillis();
             if ((lasttime / 1000) != (actualTime / 1000)) {
-                System.out.println("FPS " + frame);
                 frame = 0;
                 lasttime = actualTime;
             }
@@ -444,7 +452,30 @@ public class Main3D {
         player.y = cameraPos.y - cameraVectorFront.y * 0.4f - cameraVectorUP.y * 0.4f;
         player.z = cameraPos.z - cameraVectorFront.z * 0.4f - cameraVectorUP.z * 0.4f;
 
+        if (GameOver) {
+            // Limpa os estados das teclas para impedir movimento
+            UP = false;
+            DOWN = false;
+            LEFT = false;
+            RIGHT = false;
+            FORWARD = false;
+            BACKWARD = false;
+            QBu = false;
+            EBu = false;
+            FIRE = false;
+            return;
+        }
+
         Constantes.mapa.testaColisao(player.x, player.y, player.z, 0.1f);
+        // Exemplo de decremento de vida ao tomar dano
+        if (Constantes.mapa.testaColisao(player.x, player.y, player.z, player.raio)) {
+            healthBar.updateLives(healthBar.getCurrentLives() - 5); // Reduz 1 vida
+        }
+
+        if (healthBar.getCurrentLives() <= 0) {
+            GameOver = true; // Marca o jogo como terminado
+            return; // Impede que o restante da lógica seja executado
+        }
 
         if (FIRE && tirotimer >= 100) {
             float velocidade_projetil = 14;
@@ -492,6 +523,7 @@ public class Main3D {
 
     public void gameRender() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+
         shader.start();
 
         int lightpos = glGetUniformLocation(shader.programID, "lightPosition");
@@ -559,8 +591,17 @@ public class Main3D {
 
         shader.stop();
 
-        glfwSwapBuffers(window); // swap the color buffers
+        // Configura a projeção ortográfica para renderizar elementos 2D
+        glMatrixMode(GL11.GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, windowWidth, windowHeight, 0, -1, 1); // Coordenadas 2D
+        glMatrixMode(GL11.GL_MODELVIEW);
+        glLoadIdentity();
 
+        // Renderiza a barra de vida (vermelha)
+        healthBar.render(windowWidth, windowHeight);
+
+        glfwSwapBuffers(window); // Troca os buffers de cor
         glfwPollEvents();
     }
 

@@ -58,13 +58,11 @@ public class ObjModel extends Model {
 	}
 
 	public void loadObj(String file) {
-		// System.out.println(" "+file);
-		// InputStream in = this.getClass().getResourceAsStream(file);
+		
 		InputStream in;
 		try {
 			in = new FileInputStream(file);
 
-			// System.out.println(""+in);
 
 			BufferedReader dados = new BufferedReader(new InputStreamReader(in));
 
@@ -103,27 +101,22 @@ public class ObjModel extends Model {
 				e.printStackTrace();
 			}
 
-			// System.out.println(" v " + v.size() + " vn " + vn.size() + " vt " +
-			// vt.size());
+
 
 		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
 
 	public void decodeVertice(String str) {
 		String s[] = str.split(" ");
-		// System.out.print("V ");
 
 		Vector3f vec = new Vector3f();
 
 		int index = 0;
 		for (int i = 0; i < s.length; i++) {
-			// System.out.print(" s["+i+"] = "+s[i]);
 			try {
 				float numero = Float.parseFloat(s[i]);
-				// System.out.print(" OK");
 
 				if (index == 0) {
 					vec.x = numero;
@@ -136,26 +129,21 @@ public class ObjModel extends Model {
 				}
 				index++;
 			} catch (Exception e) {
-				// TODO: handle exception
 			}
 
 		}
-		// System.out.println();
 		v.add(vec);
 	}
 
 	public void decodeVerticeNormal(String str) {
 		String s[] = str.split(" ");
-		// System.out.print("Vn ");
 
 		Vector3f vec = new Vector3f();
 
 		int index = 0;
 		for (int i = 0; i < s.length; i++) {
-			// System.out.print(" s["+i+"] = "+s[i]);
 			try {
 				float numero = Float.parseFloat(s[i]);
-				// System.out.print(" OK");
 
 				if (index == 0) {
 					vec.x = numero;
@@ -168,26 +156,21 @@ public class ObjModel extends Model {
 				}
 				index++;
 			} catch (Exception e) {
-				// TODO: handle exception
 			}
 
 		}
-		// System.out.println();
 		vn.add(vec);
 	}
 
 	public void decodeTextureMapping(String str) {
 		String s[] = str.split(" ");
-		// System.out.print("Vt ");
 
 		Vector2f vec = new Vector2f();
 
 		int index = 0;
 		for (int i = 0; i < s.length; i++) {
-			// System.out.print(" s["+i+"] = "+s[i]);
 			try {
 				float numero = Float.parseFloat(s[i]);
-				// System.out.print(" OK");
 
 				if (index == 1) {
 					vec.x = numero;
@@ -198,11 +181,9 @@ public class ObjModel extends Model {
 
 				index++;
 			} catch (Exception e) {
-				// TODO: handle exception
 			}
 
 		}
-		// System.out.println();
 		vt.add(vec);
 	}
 
@@ -210,14 +191,12 @@ public class ObjModel extends Model {
 
 	public void decodeFace(String str) {
 		String s[] = str.split(" ");
-		// System.out.print("f ");
 
 		Face3D face = new Face3D();
 
 		int index = 0;
 
 		for (int i = 0; i < s.length; i++) {
-			// System.out.print(" s["+i+"] = "+s[i]);
 
 			if (s[i].contains("/")) {
 				String s2[] = s[i].split("/");
@@ -240,8 +219,7 @@ public class ObjModel extends Model {
 				face.v[index] = valorestmp[0];
 				face.n[index] = valorestmp[2];
 				face.t[index] = valorestmp[1];
-				// System.out.println(" v " + valorestmp[0] + " n " + valorestmp[1] + " t " +
-				// valorestmp[2]);
+
 
 				index++;
 			}
@@ -249,12 +227,10 @@ public class ObjModel extends Model {
 		}
 
 		face.nvertices = (byte) index;
-		// System.out.println();
 		f.add(face);
 	}
 
 	public void decodeGrupo(String str) {
-		// System.out.println("GRUPO _ __________--" + str);
 		String sttmp[] = str.split(" ");
 		String nome = "";
 		if (sttmp.length >= 2) {
@@ -272,7 +248,6 @@ public class ObjModel extends Model {
 
 		g.add(gp);
 		gname.put(nome, gp);
-		System.out.println("nome " + nome + "--");
 
 	}
 	
@@ -395,8 +370,7 @@ public class ObjModel extends Model {
 		}
 		
 		vertex_data.flip();
-		//normal_data.flip();
-		//textcoord_data.flip();
+
 		
 		vbo_vertex_handle = glGenBuffers();
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_vertex_handle);
@@ -437,7 +411,6 @@ public class ObjModel extends Model {
 				Vector2f vt2 = vt.get(face.t[1] - 1);
 				Vector2f vt3 = vt.get(face.t[2] - 1);
 
-				// System.out.println(v1.x+","+v1.y+","+v1.z);
 
 				glColor3f(1f, 1f, 1f);
 				glBegin(GL_TRIANGLES);
@@ -513,17 +486,14 @@ public class ObjModel extends Model {
 	}
 	@Override
 	public void draw() {
-		//desenhaseFaces(f.size());
 		
 		glEnableClientState(GL_NORMAL_ARRAY);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_normal_handle);
-    	//glVertexPointer(vertex_size, GL_FLOAT, 0, 0l);
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2,vertex_size,GL_FLOAT,false,0,0);
 
     	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo_textcood_handle);
-		//glVertexPointer(texture_size, GL_FLOAT, 0, 0l);
 		glEnableVertexAttribArray(3);
 		glVertexAttribPointer(3,texture_size,GL_FLOAT,false,0,0);
 		
@@ -553,7 +523,6 @@ public class ObjModel extends Model {
 
 		GrupoFaces gp = null;
 		if (gname.containsKey(nome) == false) {
-			System.out.println(" nao rolo");
 			return;
 		}
 
@@ -580,7 +549,6 @@ public class ObjModel extends Model {
 				Vector2f vt2 = vt.get(face.t[1] - 1);
 				Vector2f vt3 = vt.get(face.t[2] - 1);
 
-				// System.out.println(v1.x+","+v1.y+","+v1.z);
 
 				glColor3f(1f, 1f, 1f);
 				glBegin(GL_TRIANGLES);
@@ -677,7 +645,6 @@ public class ObjModel extends Model {
 				Vector2f vt2 = vt.get(face.t[1] - 1);
 				Vector2f vt3 = vt.get(face.t[2] - 1);
 				
-				//System.out.println(""+vt1.x+" "+vt1.y);
 				
 				dbg.drawLine((int)(vt1.x*tw),(int)(vt1.y*th), (int)(vt2.x*tw), (int)(vt2.y*th));
 				dbg.drawLine((int)(vt2.x*tw),(int)(vt2.y*th), (int)(vt3.x*tw), (int)(vt3.y*th));

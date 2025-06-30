@@ -1,5 +1,14 @@
 package obj;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.FloatBuffer;
+
+import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.GL_COLOR_ARRAY;
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
@@ -14,18 +23,6 @@ import static org.lwjgl.opengl.GL15.glBufferData;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.FloatBuffer;
-
-import org.lwjgl.BufferUtils;
 
 import Model.Model;
 
@@ -49,10 +46,8 @@ public class ObjHTGsrtm extends Model{
 	public void load() {
 		File f = new File("S28W049.hgt");
 		int l = (int)f.length();
-		System.out.println("l "+l);
 		wh = (int)Math.sqrt(l/2);
 		
-		System.out.println("wh "+wh);
 		
 		try {
 			BufferedInputStream bin = new BufferedInputStream(new FileInputStream(f),1024000);
@@ -183,7 +178,6 @@ public class ObjHTGsrtm extends Model{
 					float nt1[] = calculaVetorNormal(v1,v2,v3);
 					float nt2[] = calculaVetorNormal(v3,v4,v1);
 					
-					//System.out.println("nt1 "+nt1[0]+" "+nt1[1]+" "+nt1[2]);
 					
 					normal_data.put(nt1);
 					normal_data.put(nt1);
@@ -194,7 +188,6 @@ public class ObjHTGsrtm extends Model{
 					normal_data.put(nt2);
 				}
 			}
-			System.out.println("vcount "+vcount);
 			
 			vertex_data.flip();
 			color_data.flip();

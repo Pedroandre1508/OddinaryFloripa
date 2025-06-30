@@ -1,17 +1,21 @@
 package Model;
-import org.lwjgl.*;
-import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
-import org.lwjgl.system.*;
-
-import static org.lwjgl.glfw.Callbacks.*;
-import static org.lwjgl.glfw.GLFW.*;
-//import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.system.MemoryStack.*;
-import static org.lwjgl.system.MemoryUtil.*;
-
 import java.nio.FloatBuffer;
+
+import org.lwjgl.BufferUtils;
+import static org.lwjgl.opengl.GL11.GL_COLOR_ARRAY;
+import static org.lwjgl.opengl.GL11.GL_FLOAT;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.GL_VERTEX_ARRAY;
+import static org.lwjgl.opengl.GL11.glDisableClientState;
+import static org.lwjgl.opengl.GL11.glDrawArrays;
+import static org.lwjgl.opengl.GL11.glEnableClientState;
+import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
+import static org.lwjgl.opengl.GL15.glBindBuffer;
+import static org.lwjgl.opengl.GL15.glBufferData;
+import static org.lwjgl.opengl.GL15.glGenBuffers;
+import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
+import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 
 public class VboCube extends Model{
 	int vbo_vertex_handle;
@@ -309,10 +313,7 @@ public class VboCube extends Model{
 
 		glDrawArrays(GL_TRIANGLES, 0, vertices);
 		
-//		System.out.println("vbo_vertex_handle "+vbo_vertex_handle);
-//		System.out.println("vbo_color_handle "+vbo_color_handle);
-//		System.out.println("vbo_texture_handle "+vbo_texture_handle);
-//		System.out.println("vertices "+vertices);
+
 
 
 		glDisableClientState(GL_COLOR_ARRAY);

@@ -1,23 +1,14 @@
 package obj;
 
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL20.glGetUniformLocation;
-import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
-
 import java.nio.FloatBuffer;
 
+import static org.lwjgl.opengl.GL20.glGetUniformLocation;
+import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import org.lwjgl.system.MemoryUtil;
-
-import static org.lwjgl.opengl.GL11.*;
-import org.lwjgl.util.glu.*;
-
-import shaders.ShaderProgram;
-
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-import Model.Model;
-import Model.VboCube;
+import shaders.ShaderProgram;
 
 public class Mapa3D extends Object3D {
 	//Sphere sphere = new Sphere();
@@ -92,7 +83,6 @@ public class Mapa3D extends Object3D {
 		float a = (a1+a2+a3+a4)/4.0f;
 		
 		if((a+y) > (yt-rt) && (a+y) < (yt + rt) ) {
-			//System.out.println(" COLIDIU "+a+" "+yt+" "+rt);
 			return true;
 		}
 		else {

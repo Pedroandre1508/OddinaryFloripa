@@ -1,12 +1,12 @@
 package obj;
 
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL20.*;
-
-
 import java.nio.FloatBuffer;
 
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL20.glGetUniformLocation;
+import static org.lwjgl.opengl.GL20.glUniform1i;
+import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -61,8 +61,7 @@ public class Projetil extends Object3D {
 		
 		glUniform1i(bilbloc,0);
 		
-		//System.out.println("bilbloc "+bilbloc);
-		//System.out.println("modellocation "+modellocation);
+		
 		
 		if(morrendo) {
 			glBindTexture(GL_TEXTURE_2D, Constantes.texturaExplosao);
@@ -100,7 +99,6 @@ public class Projetil extends Object3D {
 		if(morrendo) {
 			timermorrendo+=diftime;
 			raio = raio*((diftime/400.0f)+1);
-			System.out.println("raio "+raio);
 			if(timermorrendo>1000) {
 				vivo = false;
 			}
