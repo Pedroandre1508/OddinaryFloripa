@@ -50,17 +50,30 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.GL_BLEND;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.GL_MODELVIEW;
+import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
+import static org.lwjgl.opengl.GL11.GL_PROJECTION;
+import static org.lwjgl.opengl.GL11.GL_QUADS;
+import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.glBegin;
 import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glBlendFunc;
 import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glColor4f;
+import static org.lwjgl.opengl.GL11.glDisable;
 import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glEnd;
 import static org.lwjgl.opengl.GL11.glFrustum;
 import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
+import static org.lwjgl.opengl.GL11.glTexCoord2f;
+import static org.lwjgl.opengl.GL11.glVertex2f;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL20.glGetUniformLocation;
@@ -125,6 +138,7 @@ public class Main3D {
     ObjtCene player;
     HealthBar healthBar; // Barra de vida do jogador
     boolean GameOver = false; // Indica se o jogo está pausado devido à morte do jogador
+    int gameOverTexture;
 
     // Variáveis para controle de lógica
     double angluz = 0;
@@ -167,7 +181,7 @@ public class Main3D {
         GLFWErrorCallback.createPrint(System.err).set();
         // Inicializa a barra de vida com 5 vidas
         healthBar = new HealthBar();
-
+        // Inicializa o contexto NanoVG
         // Initialize GLFW. Most GLFW functions will not work before doing this.
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
@@ -601,8 +615,47 @@ public class Main3D {
         // Renderiza a barra de vida (vermelha)
         healthBar.render(windowWidth, windowHeight);
 
+        // Renderiza "Game Over" se o jogador morrer
+        if (GameOver) {
+            loadGameOverTexture();
+            renderGameOverTexture(500,200);
+        }
         glfwSwapBuffers(window); // Troca os buffers de cor
         glfwPollEvents();
+    }
+
+    private void loadGameOverTexture() {
+        BufferedImage gameOverImage = TextureLoader.loadImage("textures/gameOver.png");
+        gameOverTexture = TextureLoader.loadTexture(gameOverImage);
+    }
+
+    private void renderGameOverTexture(float width, float height) {
+        glEnable(GL_BLEND); // Habilita o blending para transparência
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Configura o blending
+    
+        glEnable(GL_TEXTURE_2D); // Habilita o uso de texturas
+        glBindTexture(GL_TEXTURE_2D, gameOverTexture); // Vincula a textura do PNG
+        
+        glColor4f(1.0f, 0.0f, 1.0f, 6.0f); // RGBA: Branco com opacidade total
+
+        // Configura a projeção ortográfica para renderizar no espaço 2D da janela
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, windowWidth, windowHeight, 0, -1, 1); // Coordenadas 2D da janela
+    
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+    
+        // Renderiza a textura diretamente na interface da janela
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0); glVertex2f(windowWidth / 2 - width / 2, windowHeight / 2 - height / 2); // Inferior esquerda
+        glTexCoord2f(1, 0); glVertex2f(windowWidth / 2 + width / 2, windowHeight / 2 - height / 2); // Inferior direita
+        glTexCoord2f(1, 1); glVertex2f(windowWidth / 2 + width / 2, windowHeight / 2 + height / 2); // Superior direita
+        glTexCoord2f(0, 1); glVertex2f(windowWidth / 2 - width / 2, windowHeight / 2 + height / 2); // Superior esquerda
+        glEnd();
+    
+        glDisable(GL_TEXTURE_2D); // Desabilita o uso de texturas
+        glDisable(GL_BLEND); // Desabilita o blending
     }
 
     public static void main(String[] args) {
