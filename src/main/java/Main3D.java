@@ -458,13 +458,29 @@ public class Main3D {
         transf.translate(new Vector3f(1, 1, 0));
         view.mul(transf, view, view);
 
-        player.raio = 0.1f;
-        player.Front = cameraVectorFront;
-        player.UP = cameraVectorUP;
-        player.Right = cameraVectorRight;
-        player.x = cameraPos.x - cameraVectorFront.x * 0.4f - cameraVectorUP.x * 0.4f;
-        player.y = cameraPos.y - cameraVectorFront.y * 0.4f - cameraVectorUP.y * 0.4f;
-        player.z = cameraPos.z - cameraVectorFront.z * 0.4f - cameraVectorUP.z * 0.4f;
+        // Suavização de rotação do player
+        player.Front = Utils3D.slerp(player.Front, cameraVectorFront, 0.3f); // Interpolação suave
+        Utils3D.vec3dNormilize(player.Front); // Normaliza o vetor após a interpolação
+
+        player.UP = Utils3D.slerp(player.UP, cameraVectorUP, 0.3f);
+        Utils3D.vec3dNormilize(player.UP); // Normaliza o vetor após a interpolação
+
+        player.Right = Utils3D.slerp(player.Right, cameraVectorRight, 0.3f);
+        Utils3D.vec3dNormilize(player.Right); // Normaliza o vetor após a interpolação
+
+        // Verifica se os vetores interpolados são válidos
+        if (Float.isNaN(player.Front.x) || Float.isNaN(player.Front.y) || Float.isNaN(player.Front.z) ||
+            Float.isNaN(player.UP.x) || Float.isNaN(player.UP.y) || Float.isNaN(player.UP.z) ||
+            Float.isNaN(player.Right.x) || Float.isNaN(player.Right.y) || Float.isNaN(player.Right.z)) {
+            player.Front = cameraVectorFront; // Reajusta para valores padrão
+            player.UP = cameraVectorUP;
+            player.Right = cameraVectorRight;
+        }
+
+        // Atualiza a posição do player com base na sua orientação
+        player.x = cameraPos.x + player.Front.x * - 0.3f - player.UP.x * 0.4f;
+        player.y = cameraPos.y + player.Front.y * - 0.3f - player.UP.y * 0.4f;
+        player.z = cameraPos.z + player.Front.z * - 0.3f - player.UP.z * 0.4f;
 
         if (GameOver) {
             // Limpa os estados das teclas para impedir movimento
@@ -618,7 +634,7 @@ public class Main3D {
         // Renderiza "Game Over" se o jogador morrer
         if (GameOver) {
             loadGameOverTexture();
-            renderGameOverTexture(500,200);
+            renderGameOverTexture(500, 200);
         }
         glfwSwapBuffers(window); // Troca os buffers de cor
         glfwPollEvents();
@@ -632,28 +648,32 @@ public class Main3D {
     private void renderGameOverTexture(float width, float height) {
         glEnable(GL_BLEND); // Habilita o blending para transparência
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Configura o blending
-    
+
         glEnable(GL_TEXTURE_2D); // Habilita o uso de texturas
         glBindTexture(GL_TEXTURE_2D, gameOverTexture); // Vincula a textura do PNG
-        
+
         glColor4f(1.0f, 0.0f, 1.0f, 6.0f); // RGBA: Branco com opacidade total
 
         // Configura a projeção ortográfica para renderizar no espaço 2D da janela
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glOrtho(0, windowWidth, windowHeight, 0, -1, 1); // Coordenadas 2D da janela
-    
+
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-    
+
         // Renderiza a textura diretamente na interface da janela
         glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(windowWidth / 2 - width / 2, windowHeight / 2 - height / 2); // Inferior esquerda
-        glTexCoord2f(1, 0); glVertex2f(windowWidth / 2 + width / 2, windowHeight / 2 - height / 2); // Inferior direita
-        glTexCoord2f(1, 1); glVertex2f(windowWidth / 2 + width / 2, windowHeight / 2 + height / 2); // Superior direita
-        glTexCoord2f(0, 1); glVertex2f(windowWidth / 2 - width / 2, windowHeight / 2 + height / 2); // Superior esquerda
+        glTexCoord2f(0, 0);
+        glVertex2f(windowWidth / 2 - width / 2, windowHeight / 2 - height / 2); // Inferior esquerda
+        glTexCoord2f(1, 0);
+        glVertex2f(windowWidth / 2 + width / 2, windowHeight / 2 - height / 2); // Inferior direita
+        glTexCoord2f(1, 1);
+        glVertex2f(windowWidth / 2 + width / 2, windowHeight / 2 + height / 2); // Superior direita
+        glTexCoord2f(0, 1);
+        glVertex2f(windowWidth / 2 - width / 2, windowHeight / 2 + height / 2); // Superior esquerda
         glEnd();
-    
+
         glDisable(GL_TEXTURE_2D); // Desabilita o uso de texturas
         glDisable(GL_BLEND); // Desabilita o blending
     }

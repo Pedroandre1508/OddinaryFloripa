@@ -1,7 +1,5 @@
 package util;
 
-import static org.lwjgl.opengl.GL11.glFrustum;
-
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -92,6 +90,27 @@ public class Utils3D {
 		v.setY((float)(v.y/mag));
 		v.setZ((float)(v.z/mag));
 	}
+
+	// Interpolação SLERP entre dois vetores
+    public static Vector4f slerp(Vector4f start, Vector4f end, float t) {
+        float dot = start.x * end.x + start.y * end.y + start.z * end.z;
+
+        // Clampa o valor do dot para evitar erros numéricos
+        dot = Math.max(-1.0f, Math.min(1.0f, dot));
+
+        float theta = (float) Math.acos(dot) * t;
+        Vector4f relativeVec = new Vector4f(end.x - start.x * dot, end.y - start.y * dot, end.z - start.z * dot, 0);
+        vec3dNormilize(relativeVec);
+
+        Vector4f result = new Vector4f(
+                start.x * (float) Math.cos(theta) + relativeVec.x * (float) Math.sin(theta),
+                start.y * (float) Math.cos(theta) + relativeVec.y * (float) Math.sin(theta),
+                start.z * (float) Math.cos(theta) + relativeVec.z * (float) Math.sin(theta),
+                1.0f
+        );
+
+        return result;
+    }
 	
 //////////////////////////////////////////////////////////////////////////////
 //equivalent to glFrustum()
