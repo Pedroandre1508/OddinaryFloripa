@@ -11,6 +11,8 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import java.util.ArrayList;
+import java.util.List;
 
 import Model.Model;
 import dados.Constantes;
@@ -19,6 +21,7 @@ import util.Utils3D;
 
 public class MisselTeleguiado extends Object3D {
 
+    public List<ParticulaFumaca> particulasFumaca = new ArrayList<>();
     public Vector3f cor = new Vector3f();
     public Model model = null;
     public int texture; // Adiciona o atributo para armazenar a textura
@@ -51,7 +54,6 @@ public class MisselTeleguiado extends Object3D {
         Matrix4f modelm = Utils3D.positionMatrix(Front, UP, Right);
         Matrix4f.mul(modelm1, modelm, modelm);
 
-        // Adiciona rotação para deitar o míssil e orientá-lo para frente
         modelm.rotate((float) Math.toRadians(90), new Vector3f(1, 0, 0)); // Rotação de 90 graus no eixo X
         modelm.scale(new Vector3f(raio, raio, raio));
 
@@ -71,6 +73,11 @@ public class MisselTeleguiado extends Object3D {
 
         model.draw();
         glUniform1i(bilbloc, 0);
+
+        // Renderiza as partículas de fumaça
+        for (ParticulaFumaca p : particulasFumaca) {
+            p.render();
+        }
     }
 
     @Override
@@ -88,8 +95,21 @@ public class MisselTeleguiado extends Object3D {
             return;
         }
 
+        // Adiciona partículas de fumaça na parte traseira do míssil
+        ParticulaFumaca fumaça = new ParticulaFumaca(x - Front.x * 0.5f, y - Front.y * 0.5f, z - Front.z * 0.5f);
+        particulasFumaca.add(fumaça);
+
+        // Atualiza as partículas de fumaça
+        for (int i = 0; i < particulasFumaca.size(); i++) {
+            ParticulaFumaca p = particulasFumaca.get(i);
+            p.update(diftime);
+            if (!p.isAlive()) {
+                particulasFumaca.remove(i);
+                i--; // Ajusta o índice após remover
+            }
+        }
+
         if (alvo != null && alvo.vivo) {
-            // Lógica de perseguição ao inimigo mais próximo
             Vector3f direcao = new Vector3f(
                     alvo.x - x,
                     alvo.y - y,

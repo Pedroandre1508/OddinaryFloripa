@@ -2,6 +2,7 @@
 import java.awt.image.BufferedImage;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.lwjgl.BufferUtils;
@@ -87,6 +88,7 @@ import Model.VboBilboard;
 import Model.VboCube;
 import dados.Constantes;
 import obj.HealthBar;
+import obj.InimigoSolo;
 import obj.Mapa3D;
 import obj.MisselTeleguiado;
 import obj.ObjHTGsrtm;
@@ -271,14 +273,14 @@ public class Main3D {
                 scale = scale * 0.9f;
             }
             if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-        Object3D inimigoMaisProximo = encontrarInimigoMaisProximo();
-        if (inimigoMaisProximo != null) {
-            MisselTeleguiado missel = new MisselTeleguiado(player.x, player.y, player.z, inimigoMaisProximo);
-            missel.model = MisselOBJ; // Modelo do míssil
-            missel.texture = tMisselOBJ; // Vincula a textura ao míssil
-            listaObjetos.add(missel);
-        }
-        }
+                Object3D inimigoMaisProximo = encontrarInimigoMaisProximo();
+                if (inimigoMaisProximo != null) {
+                    MisselTeleguiado missel = new MisselTeleguiado(player.x, player.y, player.z, inimigoMaisProximo);
+                    missel.model = MisselOBJ; // Modelo do míssil
+                    missel.texture = tMisselOBJ; // Vincula a textura ao míssil
+                    listaObjetos.add(missel);
+                }
+            }
 
         });
 
@@ -286,17 +288,14 @@ public class Main3D {
         //     AudioInputStream audioStream = AudioSystem.getAudioInputStream(getClass().getResource("freeze.wav"));
         //     Clip clip = AudioSystem.getClip();
         //     clip.open(audioStream);
-
         //     // Ajuste de volume
         //     FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
         //     float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
         //     volumeControl.setValue(volume);
-
         //     clip.start();
         // } catch (Exception e) {
         //     System.err.println("error load music");
         // }
-
         // Configura contexto OpenGL	
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
@@ -306,13 +305,13 @@ public class Main3D {
     private Object3D encontrarInimigoMaisProximo() {
         Object3D inimigoMaisProximo = null;
         float menorDistancia = Float.MAX_VALUE;
-    
+
         for (Object3D obj : listaObjetos) {
             if (obj instanceof ObjtCene && obj != player && obj.vivo) {
                 float distancia = (float) Math.sqrt(
-                    Math.pow(obj.x - player.x, 2) +
-                    Math.pow(obj.y - player.y, 2) +
-                    Math.pow(obj.z - player.z, 2)
+                        Math.pow(obj.x - player.x, 2)
+                        + Math.pow(obj.y - player.y, 2)
+                        + Math.pow(obj.z - player.z, 2)
                 );
                 if (distancia < menorDistancia) {
                     menorDistancia = distancia;
@@ -321,6 +320,88 @@ public class Main3D {
             }
         }
         return inimigoMaisProximo;
+    }
+
+    private void adicionarInimigosTerrestres() {
+        ObjModel tankModel = new ObjModel();
+        tankModel.loadObj("models/tank.obj");
+        tankModel.load();
+
+        float tileSize = 0.04f * Constantes.mapa.raio;
+        int wh = Constantes.mapa.model.wh;
+
+        float soloMinX = Constantes.mapa.x;
+        float soloMaxX = Constantes.mapa.x + tileSize * (wh - 1);
+        float soloMinZ = Constantes.mapa.z;
+        float soloMaxZ = Constantes.mapa.z + tileSize * (wh - 1);
+
+        int quantidadeInimigos = 10;
+        float minDistPlayer = 3.0f;
+        float minDistEntreTanks = 2.0f;
+        float raioTank = 0.01f;
+
+        for (int i = 0; i < quantidadeInimigos;) {
+            float x = (float) (Math.random() * (soloMaxX - soloMinX) + soloMinX);
+            float z = (float) (Math.random() * (soloMaxZ - soloMinZ) + soloMinZ);
+
+            int ix = Math.round((x - Constantes.mapa.x) / tileSize);
+            int iz = Math.round((z - Constantes.mapa.z) / tileSize);
+
+            if (ix < 0 || iz < 0 || ix >= wh || iz >= wh) {
+                continue;
+            }
+
+            float altura = Constantes.mapa.model.data[iz][ix] * 0.001f * Constantes.mapa.raio + Constantes.mapa.y;
+
+            float dx = x - player.x;
+            float dz = z - player.z;
+            float distPlayer = (float) Math.sqrt(dx * dx + dz * dz);
+
+            boolean longeDeOutros = true;
+            for (Object3D obj : listaObjetos) {
+                if (obj instanceof InimigoSolo) {
+                    float ddx = x - obj.x;
+                    float ddz = z - obj.z;
+                    float distTank = (float) Math.sqrt(ddx * ddx + ddz * ddz);
+                    if (distTank < minDistEntreTanks) {
+                        longeDeOutros = false;
+                        break;
+                    }
+                }
+            }
+
+            if (distPlayer > minDistPlayer && longeDeOutros) {
+                InimigoSolo inimigo = new InimigoSolo(x, altura + 0.01f, z, raioTank);
+                inimigo.model = tankModel;
+                listaObjetos.add(inimigo);
+                i++;
+            }
+        }
+    }
+
+// Atualiza lógica de ataque dos inimigos terrestres
+    private void atualizarAtaqueInimigos(long diftime) {
+        List<Object3D> novosObjetos = new ArrayList<>(); // Lista temporária para novos objetos
+
+        for (Object3D obj : listaObjetos) {
+            if (obj instanceof InimigoSolo && obj.vivo) {
+                InimigoSolo inimigo = (InimigoSolo) obj;
+
+                if (inimigo.podeAtirar()) {
+                    float velocidadeProjetil = 10.0f;
+                    Projetil proj = new Projetil(inimigo.x, inimigo.y, inimigo.z);
+                    proj.vx = (player.x - inimigo.x) * velocidadeProjetil;
+                    proj.vy = (player.y - inimigo.y) * velocidadeProjetil;
+                    proj.vz = (player.z - inimigo.z) * velocidadeProjetil;
+                    proj.raio = 0.2f;
+                    proj.model = vboBilbord;
+                    novosObjetos.add(proj); // Adiciona o projetil à lista temporária
+                    inimigo.resetarCooldown();
+                }
+            }
+        }
+
+        listaObjetos.addAll(novosObjetos); // Adiciona os novos objetos à lista original após a iteração
     }
 
     // Loop principal do jogo
@@ -356,6 +437,9 @@ public class Main3D {
 
         BufferedImage imgtextexp = TextureLoader.loadImage("textures/texturaExplosao.png");
         Constantes.texturaExplosao = TextureLoader.loadTexture(imgtextexp);
+
+        BufferedImage imgParticula = TextureLoader.loadImage("textures/skz.jpeg");
+        Constantes.texturaParticula = TextureLoader.loadTexture(imgParticula);
 
         vboc = new VboCube();
         vboc.load();
@@ -408,6 +492,8 @@ public class Main3D {
         int frame = 0;
         long lasttime = System.currentTimeMillis();
 
+        adicionarInimigosTerrestres();
+
         long ultimoTempo = System.currentTimeMillis();
         while (!glfwWindowShouldClose(window)) {
 
@@ -415,6 +501,7 @@ public class Main3D {
             ultimoTempo = System.currentTimeMillis();
 
             gameUptade(diftime);
+            atualizarAtaqueInimigos(diftime);
             gameRender();
 
             frame++;
@@ -496,18 +583,18 @@ public class Main3D {
         Utils3D.vec3dNormilize(player.Right); // Normaliza o vetor após a interpolação
 
         // Verifica se os vetores interpolados são válidos
-        if (Float.isNaN(player.Front.x) || Float.isNaN(player.Front.y) || Float.isNaN(player.Front.z) ||
-            Float.isNaN(player.UP.x) || Float.isNaN(player.UP.y) || Float.isNaN(player.UP.z) ||
-            Float.isNaN(player.Right.x) || Float.isNaN(player.Right.y) || Float.isNaN(player.Right.z)) {
+        if (Float.isNaN(player.Front.x) || Float.isNaN(player.Front.y) || Float.isNaN(player.Front.z)
+                || Float.isNaN(player.UP.x) || Float.isNaN(player.UP.y) || Float.isNaN(player.UP.z)
+                || Float.isNaN(player.Right.x) || Float.isNaN(player.Right.y) || Float.isNaN(player.Right.z)) {
             player.Front = cameraVectorFront; // Reajusta para valores padrão
             player.UP = cameraVectorUP;
             player.Right = cameraVectorRight;
         }
 
         // Atualiza a posição do player com base na sua orientação
-        player.x = cameraPos.x + player.Front.x * - 0.3f - player.UP.x * 0.4f;
-        player.y = cameraPos.y + player.Front.y * - 0.3f - player.UP.y * 0.4f;
-        player.z = cameraPos.z + player.Front.z * - 0.3f - player.UP.z * 0.4f;
+        player.x = cameraPos.x + player.Front.x * -0.3f - player.UP.x * 0.4f;
+        player.y = cameraPos.y + player.Front.y * -0.3f - player.UP.y * 0.4f;
+        player.z = cameraPos.z + player.Front.z * -0.3f - player.UP.z * 0.4f;
 
         if (GameOver) {
             // Limpa os estados das teclas para impedir movimento

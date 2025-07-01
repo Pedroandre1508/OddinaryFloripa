@@ -8,6 +8,8 @@ public class InimigoSolo extends ObjtCene {
     private float direcao = rand.nextFloat() * (float)(2 * Math.PI);
     private long tempoTroca = 500 + rand.nextInt(1500); // ms
     private long tempoAtual = 0;
+    private long ultimoTiro = 0; // Timestamp do último tiro
+    private long intervaloTiro = 2000;
 
     public InimigoSolo(float x, float y, float z, float raio) {
         super(x, y, z, raio);
@@ -35,5 +37,14 @@ public class InimigoSolo extends ObjtCene {
             tempoTroca = 500 + rand.nextInt(1500);
             tempoAtual = 0;
         }
+    }
+
+    public boolean podeAtirar() {
+        long agora = System.currentTimeMillis();
+        return (agora - ultimoTiro) >= intervaloTiro;
+    }
+    
+    public void resetarCooldown() {
+        ultimoTiro = System.currentTimeMillis();
     }
 }
