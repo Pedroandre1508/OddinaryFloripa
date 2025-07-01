@@ -4,11 +4,6 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Random;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
@@ -17,6 +12,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_E;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_M;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_Q;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_S;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
@@ -92,6 +88,7 @@ import Model.VboCube;
 import dados.Constantes;
 import obj.HealthBar;
 import obj.Mapa3D;
+import obj.MisselTeleguiado;
 import obj.ObjHTGsrtm;
 import obj.ObjModel;
 import obj.Object3D;
@@ -131,8 +128,8 @@ public class Main3D {
     // Texturas e modelos
     int tgato;
     int tf104;
-    int tsr71;
-    ObjModel sr71;
+    int tMisselOBJ;
+    ObjModel MisselOBJ;
 
     // Objeto do jogador
     ObjtCene player;
@@ -273,28 +270,56 @@ public class Main3D {
             if (key == GLFW_KEY_X) {
                 scale = scale * 0.9f;
             }
+            if (key == GLFW_KEY_M && action == GLFW_PRESS) {
+        Object3D inimigoMaisProximo = encontrarInimigoMaisProximo();
+        if (inimigoMaisProximo != null) {
+            MisselTeleguiado missel = new MisselTeleguiado(player.x, player.y, player.z, inimigoMaisProximo);
+            missel.model = vboc; // Modelo do míssil
+            listaObjetos.add(missel);
+        }
+        }
 
         });
 
-        try {
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(getClass().getResource("freeze.wav"));
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioStream);
+        // try {
+        //     AudioInputStream audioStream = AudioSystem.getAudioInputStream(getClass().getResource("freeze.wav"));
+        //     Clip clip = AudioSystem.getClip();
+        //     clip.open(audioStream);
 
-            // Ajuste de volume
-            FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-            float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
-            volumeControl.setValue(volume);
+        //     // Ajuste de volume
+        //     FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+        //     float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
+        //     volumeControl.setValue(volume);
 
-            clip.start();
-        } catch (Exception e) {
-            System.err.println("error load music");
-        }
+        //     clip.start();
+        // } catch (Exception e) {
+        //     System.err.println("error load music");
+        // }
 
         // Configura contexto OpenGL	
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
         glfwShowWindow(window);
+    }
+
+    private Object3D encontrarInimigoMaisProximo() {
+        Object3D inimigoMaisProximo = null;
+        float menorDistancia = Float.MAX_VALUE;
+    
+        for (Object3D obj : listaObjetos) {
+            if (obj instanceof ObjtCene && obj != player && obj.vivo) {
+                float distancia = (float) Math.sqrt(
+                    Math.pow(obj.x - player.x, 2) +
+                    Math.pow(obj.y - player.y, 2) +
+                    Math.pow(obj.z - player.z, 2)
+                );
+                if (distancia < menorDistancia) {
+                    menorDistancia = distancia;
+                    inimigoMaisProximo = obj;
+                }
+            }
+        }
+        return inimigoMaisProximo;
     }
 
     // Loop principal do jogo
@@ -309,13 +334,13 @@ public class Main3D {
         // Carrega texturas e modelos
         BufferedImage imggato = TextureLoader.loadImage("textures/texturaGato.jpeg");
         BufferedImage imgf104 = TextureLoader.loadImage("textures/skz.jpeg"); // textura jato
-        BufferedImage imgsr71 = TextureLoader.loadImage("textures/sr71.jpg");
+        BufferedImage imgMisselOBJ = TextureLoader.loadImage("textures/bomba.jpg");
 
         BufferedImage gatorgba = new BufferedImage(imggato.getWidth(), imggato.getHeight(), BufferedImage.TYPE_INT_ARGB);
         gatorgba.getGraphics().drawImage(imggato, 0, 0, null);
         tgato = TextureLoader.loadTexture(imggato);
         tf104 = TextureLoader.loadTexture(imgf104);
-        tsr71 = TextureLoader.loadTexture(imgsr71);
+        tMisselOBJ = TextureLoader.loadTexture(imgMisselOBJ);
 
         Constantes.tgato = tgato;
 
@@ -355,8 +380,9 @@ public class Main3D {
 
         listaObjetos.add(player);
 
-        sr71 = new ObjModel();
-        sr71.load();
+        MisselOBJ = new ObjModel();
+        MisselOBJ.loadObj("models/tank.obj"); // Certifique-se de que o caminho está correto
+        MisselOBJ.load();
 
         for (int i = 0; i < 1000; i++) {
             ObjtCene cubo = new ObjtCene(rnd.nextFloat() * 10 - 5, rnd.nextFloat() * 10 - 5, rnd.nextFloat() * 10 - 5, rnd.nextFloat() * 0.05f + 0.02f);
