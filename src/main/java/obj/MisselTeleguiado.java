@@ -1,6 +1,8 @@
 package obj;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11.glBindTexture;
@@ -11,8 +13,6 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import java.util.ArrayList;
-import java.util.List;
 
 import Model.Model;
 import dados.Constantes;
@@ -146,6 +146,13 @@ public class MisselTeleguiado extends Object3D {
                 + Math.pow(alvo.y - y, 2)
                 + Math.pow(alvo.z - z, 2)
         );
-        return distancia < (raio + alvo.raio);
+        if (distancia < (raio + alvo.raio)) {
+            if (alvo instanceof InimigoSolo) {
+                ((InimigoSolo) alvo).aplicarDano(4); // Aplica 4 de dano ao inimigo
+                Constantes.listaObjetos.remove(alvo); // Remove o inimigo da lista
+            }
+            return true;
+        }
+        return false;
     }
 }

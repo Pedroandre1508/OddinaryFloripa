@@ -175,17 +175,16 @@ public class Main3D {
 
     // Inicializa a janela e configurações do jogo
     private void init() {
+        dados.Constantes.listaObjetos = new ArrayList<>();
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
         // Inicializa a barra de vida com 5 vidas
         healthBar = new HealthBar();
-        // Inicializa o contexto NanoVG
-        // Initialize GLFW. Most GLFW functions will not work before doing this.
+
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
-
         // Configurações da janela
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
@@ -326,37 +325,34 @@ public class Main3D {
         ObjModel tankModel = new ObjModel();
         tankModel.loadObj("models/tank.obj");
         tankModel.load();
-
+    
         float tileSize = 0.04f * Constantes.mapa.raio;
         int wh = Constantes.mapa.model.wh;
-
-        float soloMinX = Constantes.mapa.x;
-        float soloMaxX = Constantes.mapa.x + tileSize * (wh - 1);
-        float soloMinZ = Constantes.mapa.z;
-        float soloMaxZ = Constantes.mapa.z + tileSize * (wh - 1);
-
+    
         int quantidadeInimigos = 10;
-        float minDistPlayer = 3.0f;
-        float minDistEntreTanks = 2.0f;
+        float minDistPlayer = 5.0f; // Distância mínima do jogador
+        float maxDistPlayer = 20.0f; // Distância máxima do jogador
+        float minDistEntreTanks = 2.0f; // Distância mínima entre inimigos
         float raioTank = 0.01f;
-
+    
         for (int i = 0; i < quantidadeInimigos;) {
-            float x = (float) (Math.random() * (soloMaxX - soloMinX) + soloMinX);
-            float z = (float) (Math.random() * (soloMaxZ - soloMinZ) + soloMinZ);
-
+            float x = player.x + (float) (Math.random() * (maxDistPlayer - minDistPlayer) + minDistPlayer) * (Math.random() > 0.5 ? 1 : -1);
+            float z = player.z + (float) (Math.random() * (maxDistPlayer - minDistPlayer) + minDistPlayer) * (Math.random() > 0.5 ? 1 : -1);
+    
             int ix = Math.round((x - Constantes.mapa.x) / tileSize);
             int iz = Math.round((z - Constantes.mapa.z) / tileSize);
-
+    
             if (ix < 0 || iz < 0 || ix >= wh || iz >= wh) {
                 continue;
             }
-
-            float altura = Constantes.mapa.model.data[iz][ix] * 0.001f * Constantes.mapa.raio + Constantes.mapa.y;
-
-            float dx = x - player.x;
-            float dz = z - player.z;
-            float distPlayer = (float) Math.sqrt(dx * dx + dz * dz);
-
+    
+            int alturaTerreno = Constantes.mapa.model.data[iz][ix];
+            if (alturaTerreno <= 0) { // Verifica se é água
+                continue;
+            }
+    
+            float altura = alturaTerreno * 0.001f * Constantes.mapa.raio + Constantes.mapa.y;
+    
             boolean longeDeOutros = true;
             for (Object3D obj : listaObjetos) {
                 if (obj instanceof InimigoSolo) {
@@ -369,8 +365,8 @@ public class Main3D {
                     }
                 }
             }
-
-            if (distPlayer > minDistPlayer && longeDeOutros) {
+    
+            if (longeDeOutros) {
                 InimigoSolo inimigo = new InimigoSolo(x, altura + 0.01f, z, raioTank);
                 inimigo.model = tankModel;
                 listaObjetos.add(inimigo);
@@ -379,20 +375,31 @@ public class Main3D {
         }
     }
 
-// Atualiza lógica de ataque dos inimigos terrestres
     private void atualizarAtaqueInimigos(long diftime) {
         List<Object3D> novosObjetos = new ArrayList<>(); // Lista temporária para novos objetos
-
+        float velocidadeProjetil = 3.0f; // Velocidade reduzida dos projéteis
+    
         for (Object3D obj : listaObjetos) {
             if (obj instanceof InimigoSolo && obj.vivo) {
                 InimigoSolo inimigo = (InimigoSolo) obj;
-
+    
                 if (inimigo.podeAtirar()) {
-                    float velocidadeProjetil = 10.0f;
+                    // Calcula a direção do projétil
+                    float dx = player.x - inimigo.x;
+                    float dy = player.y - inimigo.y;
+                    float dz = player.z - inimigo.z;
+                    float distancia = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+    
+                    // Normaliza a direção
+                    dx /= distancia;
+                    dy /= distancia;
+                    dz /= distancia;
+    
+                    // Cria o projétil com direção normalizada e velocidade fixa
                     Projetil proj = new Projetil(inimigo.x, inimigo.y, inimigo.z);
-                    proj.vx = (player.x - inimigo.x) * velocidadeProjetil;
-                    proj.vy = (player.y - inimigo.y) * velocidadeProjetil;
-                    proj.vz = (player.z - inimigo.z) * velocidadeProjetil;
+                    proj.vx = dx * velocidadeProjetil;
+                    proj.vy = dy * velocidadeProjetil;
+                    proj.vz = dz * velocidadeProjetil;
                     proj.raio = 0.2f;
                     proj.model = vboBilbord;
                     novosObjetos.add(proj); // Adiciona o projetil à lista temporária
@@ -400,7 +407,7 @@ public class Main3D {
                 }
             }
         }
-
+    
         listaObjetos.addAll(novosObjetos); // Adiciona os novos objetos à lista original após a iteração
     }
 
@@ -438,7 +445,7 @@ public class Main3D {
         BufferedImage imgtextexp = TextureLoader.loadImage("textures/texturaExplosao.png");
         Constantes.texturaExplosao = TextureLoader.loadTexture(imgtextexp);
 
-        BufferedImage imgParticula = TextureLoader.loadImage("textures/skz.jpeg");
+        BufferedImage imgParticula = TextureLoader.loadImage("textures/particula.png");
         Constantes.texturaParticula = TextureLoader.loadTexture(imgParticula);
 
         vboc = new VboCube();
@@ -452,7 +459,7 @@ public class Main3D {
         f101.loadObj("models/fighter05.obj");
         f101.load();
 
-        player = new ObjtCene(0, 0, 0, 0.2f);
+        player = new ObjtCene(10, 0, 50, 0.2f);
         player.model = f101;
         player.vz = 0.0f;
         player.texture = tf104;

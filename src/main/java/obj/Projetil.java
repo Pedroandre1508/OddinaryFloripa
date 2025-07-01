@@ -89,11 +89,25 @@ public class Projetil extends Object3D {
 		}
 		
 		if(Constantes.mapa.testaColisao(x, y, z, raio)) {
-			//vivo = false;
 			morrendo = true;
 			vx = 0;
 			vy = 0;
 			vz = 0;
+		}
+
+		for (Object3D obj : Constantes.listaObjetos) {
+			if (obj instanceof InimigoSolo && obj.vivo) {
+				float distancia = (float) Math.sqrt(
+						Math.pow(obj.x - x, 2)
+						+ Math.pow(obj.y - y, 2)
+						+ Math.pow(obj.z - z, 2)
+				);
+				if (distancia < (raio + obj.raio)) {
+					((InimigoSolo) obj).aplicarDano(2); // Aplica 2 de dano ao inimigo
+					vivo = false; // O projétil desaparece após causar dano
+					break;
+				}
+			}
 		}
 		
 		if(morrendo) {
