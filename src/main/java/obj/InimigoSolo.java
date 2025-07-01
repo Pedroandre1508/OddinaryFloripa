@@ -12,7 +12,7 @@ public class InimigoSolo extends ObjtCene {
     private int vidaAtual = vidaMaxima; // Vida atual do inimigo    
 
     private static final Random rand = new Random();
-    private float velocidade = 0.01f + rand.nextFloat() * 0.04f;
+    private float velocidade = 0.01f + rand.nextFloat() * 0.02f;
     private float direcao = rand.nextFloat() * (float) (2 * Math.PI);
     private long tempoTroca = 500 + rand.nextInt(1500); // ms
     private long tempoAtual = 0;
@@ -21,7 +21,7 @@ public class InimigoSolo extends ObjtCene {
 
     public InimigoSolo(float x, float y, float z, float raio) {
         super(x, y, z, raio);
-        this.raio = raio;
+        this.raio = raio  * 1.5f;
     }
 
     @Override

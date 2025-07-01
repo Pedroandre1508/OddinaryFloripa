@@ -150,6 +150,9 @@ public class MisselTeleguiado extends Object3D {
             if (alvo instanceof InimigoSolo) {
                 ((InimigoSolo) alvo).aplicarDano(4); // Aplica 4 de dano ao inimigo
                 Constantes.listaObjetos.remove(alvo); // Remove o inimigo da lista
+            } else if (alvo instanceof InimigoVoador) {
+                ((InimigoVoador) alvo).aplicarDano(4); // Aplica 4 de dano ao inimigo voador
+                Constantes.listaObjetos.remove(alvo); // Remove o inimigo da lista
             }
             return true;
         }

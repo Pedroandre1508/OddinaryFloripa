@@ -5,6 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
+
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
@@ -89,6 +94,7 @@ import Model.VboCube;
 import dados.Constantes;
 import obj.HealthBar;
 import obj.InimigoSolo;
+import obj.InimigoVoador;
 import obj.Mapa3D;
 import obj.MisselTeleguiado;
 import obj.ObjHTGsrtm;
@@ -138,6 +144,10 @@ public class Main3D {
     HealthBar healthBar; // Barra de vida do jogador
     boolean GameOver = false; // Indica se o jogo está pausado devido à morte do jogador
     int gameOverTexture;
+
+    //lista de inimigos
+    ArrayList<InimigoSolo> listaInimigosTerrestres = new ArrayList<>();
+    ArrayList<InimigoVoador> listaInimigosVoadores = new ArrayList<>();
 
     // Variáveis para controle de lógica
     double angluz = 0;
@@ -285,22 +295,34 @@ public class Main3D {
 
         });
 
-        // try {
-        //     AudioInputStream audioStream = AudioSystem.getAudioInputStream(getClass().getResource("freeze.wav"));
-        //     Clip clip = AudioSystem.getClip();
-        //     clip.open(audioStream);
-        //     // Ajuste de volume
-        //     FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-        //     float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
-        //     volumeControl.setValue(volume);
-        //     clip.start();
-        // } catch (Exception e) {
-        //     System.err.println("error load music");
-        // }
+        try {
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(getClass().getResource("freeze.wav"));
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            // Ajuste de volume
+            FloatControl volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+            float volume = (float) (Math.log(0.5) / Math.log(10) * 20); // 50% do volume máximo
+            volumeControl.setValue(volume);
+            clip.start();
+        } catch (Exception e) {
+            System.err.println("error load music");
+        }
+        
         // Configura contexto OpenGL	
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
         glfwShowWindow(window);
+
+        GL.createCapabilities(); // Inicializa as capacidades do OpenGL
+
+        // Inicializa os buffers e texturas após configurar o contexto OpenGL
+        vboBilbord = new VboBilboard();
+        vboBilbord.load();
+        dados.Constantes.vboBilbord = vboBilbord;
+
+        // Inicializa outros recursos
+        healthBar = new HealthBar();
+        dados.Constantes.player = player;
     }
 
     private Object3D encontrarInimigoMaisProximo() {
@@ -327,34 +349,34 @@ public class Main3D {
         ObjModel tankModel = new ObjModel();
         tankModel.loadObj("models/tank.obj");
         tankModel.load();
-    
+
         float tileSize = 0.04f * Constantes.mapa.raio;
         int wh = Constantes.mapa.model.wh;
-    
+
         int quantidadeInimigos = 10;
         float minDistPlayer = 5.0f; // Distância mínima do jogador
         float maxDistPlayer = 20.0f; // Distância máxima do jogador
         float minDistEntreTanks = 2.0f; // Distância mínima entre inimigos
         float raioTank = 0.01f;
-    
+
         for (int i = 0; i < quantidadeInimigos;) {
             float x = player.x + (float) (Math.random() * (maxDistPlayer - minDistPlayer) + minDistPlayer) * (Math.random() > 0.5 ? 1 : -1);
             float z = player.z + (float) (Math.random() * (maxDistPlayer - minDistPlayer) + minDistPlayer) * (Math.random() > 0.5 ? 1 : -1);
-    
+
             int ix = Math.round((x - Constantes.mapa.x) / tileSize);
             int iz = Math.round((z - Constantes.mapa.z) / tileSize);
-    
+
             if (ix < 0 || iz < 0 || ix >= wh || iz >= wh) {
                 continue;
             }
-    
+
             int alturaTerreno = Constantes.mapa.model.data[iz][ix];
             if (alturaTerreno <= 0) { // Verifica se é água
                 continue;
             }
-    
+
             float altura = alturaTerreno * 0.001f * Constantes.mapa.raio + Constantes.mapa.y;
-    
+
             boolean longeDeOutros = true;
             for (Object3D obj : listaObjetos) {
                 if (obj instanceof InimigoSolo) {
@@ -367,11 +389,49 @@ public class Main3D {
                     }
                 }
             }
-    
+
             if (longeDeOutros) {
                 InimigoSolo inimigo = new InimigoSolo(x, altura + 0.01f, z, raioTank);
                 inimigo.model = tankModel;
+                listaInimigosTerrestres.add(inimigo);
                 listaObjetos.add(inimigo);
+                i++;
+            }
+        }
+    }
+
+    private void adicionarInimigosVoadores() {
+        ObjModel voadorModel = new ObjModel();
+        voadorModel.loadObj("models/fighter04.obj");
+        voadorModel.load();
+
+        int quantidadeInimigos = 10;
+        float minDistPlayer = 20.0f; // Distância mínima do jogador
+        float maxDistPlayer = 30.0f; // Distância máxima do jogador
+        float raioVoador = 1.0f;
+
+        for (int i = 0; i < quantidadeInimigos;) {
+            float x = player.x + (float) (Math.random() * (maxDistPlayer - minDistPlayer) + minDistPlayer) * (Math.random() > 0.5 ? 1 : -1);
+            float z = player.z + (float) (Math.random() * (maxDistPlayer - minDistPlayer) + minDistPlayer) * (Math.random() > 0.5 ? 1 : -1);
+
+            boolean longeDeOutros = true;
+            for (Object3D obj : listaObjetos) {
+                if (obj instanceof InimigoVoador) {
+                    float ddx = x - obj.x;
+                    float ddz = z - obj.z;
+                    float distVoador = (float) Math.sqrt(ddx * ddx + ddz * ddz);
+                    if (distVoador < raioVoador * 2) {
+                        longeDeOutros = false;
+                        break;
+                    }
+                }
+            }
+
+            if (longeDeOutros) {
+                InimigoVoador voador = new InimigoVoador(x, 0, z, raioVoador);
+                voador.model = voadorModel;
+                listaInimigosVoadores.add(voador);
+                listaObjetos.add(voador);
                 i++;
             }
         }
@@ -379,7 +439,7 @@ public class Main3D {
 
     private void atualizarAtaqueInimigos(long diftime) {
         List<Object3D> novosObjetos = new ArrayList<>(); // Lista temporária para novos objetos
-        float velocidadeProjetil = 5.0f; // Velocidade reduzida dos projéteis
+        float velocidadeProjetil = 5.0f; // Velocidade dos projéteis
     
         for (Object3D obj : listaObjetos) {
             if (obj instanceof InimigoSolo && obj.vivo) {
@@ -404,8 +464,16 @@ public class Main3D {
                     proj.vz = dz * velocidadeProjetil;
                     proj.raio = 0.2f;
                     proj.model = vboBilbord;
-                    novosObjetos.add(proj); // Adiciona o projetil à lista temporária
+                    novosObjetos.add(proj); // Adiciona o projétil à lista temporária
                     inimigo.resetarCooldown();
+                }
+            }
+    
+            if (obj instanceof InimigoVoador && obj.vivo) {
+                InimigoVoador voador = (InimigoVoador) obj;
+    
+                if (voador.podeAtirar()) {
+                    voador.dispararProjetil(player.x, player.y, player.z, vboBilbord);
                 }
             }
         }
@@ -504,6 +572,7 @@ public class Main3D {
         long lasttime = System.currentTimeMillis();
 
         adicionarInimigosTerrestres();
+        adicionarInimigosVoadores();
 
         long ultimoTempo = System.currentTimeMillis();
         while (!glfwWindowShouldClose(window)) {
@@ -622,6 +691,7 @@ public class Main3D {
         }
 
         Constantes.mapa.testaColisao(player.x, player.y, player.z, 0.1f);
+        
         // Exemplo de decremento de vida ao tomar dano
         if (Constantes.mapa.testaColisao(player.x, player.y, player.z, player.raio)) {
             healthBar.updateLives(healthBar.getCurrentLives() - 5); // Reduz 1 vida
