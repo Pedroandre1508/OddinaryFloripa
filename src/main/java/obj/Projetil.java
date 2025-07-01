@@ -83,8 +83,22 @@ public class Projetil extends Object3D {
 		x += vx*diftime/1000.0f;
 		y += vy*diftime/1000.0f;
 		z += vz*diftime/1000.0f;
+
+		// Verifica se o projétil atingiu o jogador
+		float distanciaPlayer = (float) Math.sqrt(
+            Math.pow(Constantes.player.x - x, 2) +
+            Math.pow(Constantes.player.y - y, 2) +
+            Math.pow(Constantes.player.z - z, 2)
+    	);
+
+		if (distanciaPlayer < (raio + Constantes.player.raio)) {
+			Constantes.player.healthBar.updateLives(Constantes.player.healthBar.getCurrentLives() - 1); // Reduz 1 vida
+			vivo = false; // O projétil desaparece após atingir o jogador
+			return;
+		}
+	
 		
-		if(timervida> 3000) {
+		if(timervida> 10000) {
 			vivo = false;
 		}
 		

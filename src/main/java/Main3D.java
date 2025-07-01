@@ -176,11 +176,13 @@ public class Main3D {
     // Inicializa a janela e configurações do jogo
     private void init() {
         dados.Constantes.listaObjetos = new ArrayList<>();
+        dados.Constantes.player = player;
+        healthBar = new HealthBar();
+
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
         // Inicializa a barra de vida com 5 vidas
-        healthBar = new HealthBar();
 
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
@@ -377,7 +379,7 @@ public class Main3D {
 
     private void atualizarAtaqueInimigos(long diftime) {
         List<Object3D> novosObjetos = new ArrayList<>(); // Lista temporária para novos objetos
-        float velocidadeProjetil = 3.0f; // Velocidade reduzida dos projéteis
+        float velocidadeProjetil = 5.0f; // Velocidade reduzida dos projéteis
     
         for (Object3D obj : listaObjetos) {
             if (obj instanceof InimigoSolo && obj.vivo) {
@@ -463,6 +465,7 @@ public class Main3D {
         player.model = f101;
         player.vz = 0.0f;
         player.texture = tf104;
+        player.healthBar = healthBar;
 
         Matrix4f f104ajust = new Matrix4f();
         f104ajust.setIdentity();
@@ -470,6 +473,7 @@ public class Main3D {
         f104ajust.rotate(3.14f, new Vector3f(0, 0, 1));
         player.modelAjust = f104ajust;
 
+        dados.Constantes.player = player; // Referência ao jogador na classe Constantesdddddd
         listaObjetos.add(player);
 
         MisselOBJ = new ObjModel();

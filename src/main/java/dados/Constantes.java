@@ -4,9 +4,11 @@ import java.util.ArrayList;
 
 import obj.Mapa3D;
 import obj.Object3D;
+import obj.ObjtCene;
 
 public class Constantes {
 	public static Mapa3D mapa;
+	public static ObjtCene player;
 	public static ArrayList<Object3D> listaObjetos = new ArrayList<>();
 	public static int tmult;
 	public static int tgato;
