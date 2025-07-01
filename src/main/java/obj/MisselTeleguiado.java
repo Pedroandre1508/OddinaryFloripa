@@ -18,8 +18,10 @@ import shaders.ShaderProgram;
 import util.Utils3D;
 
 public class MisselTeleguiado extends Object3D {
+
     public Vector3f cor = new Vector3f();
     public Model model = null;
+    public int texture; // Adiciona o atributo para armazenar a textura
 
     FloatBuffer matrixBuffer = MemoryUtil.memAllocFloat(16);
     public float rotvel = 0;
@@ -41,10 +43,16 @@ public class MisselTeleguiado extends Object3D {
 
     @Override
     public void DesenhaSe(ShaderProgram shader) {
+        if (texture != 0) {
+            glBindTexture(GL_TEXTURE_2D, texture);
+        }
         Matrix4f modelm1 = new Matrix4f();
         modelm1.translate(new Vector3f(x, y, z));
         Matrix4f modelm = Utils3D.positionMatrix(Front, UP, Right);
         Matrix4f.mul(modelm1, modelm, modelm);
+
+        // Adiciona rotação para deitar o míssil e orientá-lo para frente
+        modelm.rotate((float) Math.toRadians(90), new Vector3f(1, 0, 0)); // Rotação de 90 graus no eixo X
         modelm.scale(new Vector3f(raio, raio, raio));
 
         int modellocation = glGetUniformLocation(shader.programID, "model");
@@ -83,9 +91,9 @@ public class MisselTeleguiado extends Object3D {
         if (alvo != null && alvo.vivo) {
             // Lógica de perseguição ao inimigo mais próximo
             Vector3f direcao = new Vector3f(
-                alvo.x - x,
-                alvo.y - y,
-                alvo.z - z
+                    alvo.x - x,
+                    alvo.y - y,
+                    alvo.z - z
             );
             direcao.normalise();
             vx = direcao.x * 5.0f; // Velocidade do míssil
@@ -114,9 +122,9 @@ public class MisselTeleguiado extends Object3D {
 
     private boolean testaColisaoComAlvo() {
         float distancia = (float) Math.sqrt(
-            Math.pow(alvo.x - x, 2) +
-            Math.pow(alvo.y - y, 2) +
-            Math.pow(alvo.z - z, 2)
+                Math.pow(alvo.x - x, 2)
+                + Math.pow(alvo.y - y, 2)
+                + Math.pow(alvo.z - z, 2)
         );
         return distancia < (raio + alvo.raio);
     }

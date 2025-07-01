@@ -274,7 +274,8 @@ public class Main3D {
         Object3D inimigoMaisProximo = encontrarInimigoMaisProximo();
         if (inimigoMaisProximo != null) {
             MisselTeleguiado missel = new MisselTeleguiado(player.x, player.y, player.z, inimigoMaisProximo);
-            missel.model = vboc; // Modelo do míssil
+            missel.model = MisselOBJ; // Modelo do míssil
+            missel.texture = tMisselOBJ; // Vincula a textura ao míssil
             listaObjetos.add(missel);
         }
         }
@@ -334,7 +335,7 @@ public class Main3D {
         // Carrega texturas e modelos
         BufferedImage imggato = TextureLoader.loadImage("textures/texturaGato.jpeg");
         BufferedImage imgf104 = TextureLoader.loadImage("textures/skz.jpeg"); // textura jato
-        BufferedImage imgMisselOBJ = TextureLoader.loadImage("textures/bomba.jpg");
+        BufferedImage imgMisselOBJ = TextureLoader.loadImage("textures/skz.jpeg");
 
         BufferedImage gatorgba = new BufferedImage(imggato.getWidth(), imggato.getHeight(), BufferedImage.TYPE_INT_ARGB);
         gatorgba.getGraphics().drawImage(imggato, 0, 0, null);
@@ -364,10 +365,10 @@ public class Main3D {
 
         //Configuração do Player
         ObjModel f101 = new ObjModel();
-        f101.loadObj("models/f104starfighter.obj");
+        f101.loadObj("models/fighter05.obj");
         f101.load();
 
-        player = new ObjtCene(0, 0, 0, 0.1f);
+        player = new ObjtCene(0, 0, 0, 0.2f);
         player.model = f101;
         player.vz = 0.0f;
         player.texture = tf104;
@@ -381,7 +382,7 @@ public class Main3D {
         listaObjetos.add(player);
 
         MisselOBJ = new ObjModel();
-        MisselOBJ.loadObj("models/tank.obj"); // Certifique-se de que o caminho está correto
+        MisselOBJ.loadObj("models/missel.obj"); // Certifique-se de que o caminho está correto
         MisselOBJ.load();
 
         for (int i = 0; i < 1000; i++) {
